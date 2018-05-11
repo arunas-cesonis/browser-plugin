@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <script>
+      var mkEmitter = function () { 
+        var listeners = []
+        return {
+          addListener: function (f) {
+            listeners.push(f)
+          },
+          emit: function () { 
+            var args = arguments
+            listeners.forEach(f => f.apply(null, args))
+          }
+        }
+      }
+      var browser = {
+        tabs: {
+          onActivated: mkEmitter(),
+          onUpdated: mkEmitter()
+        }
+      }
+    </script>
+    <script src="dist/out.js"></script>
+  </body>
+</html>
