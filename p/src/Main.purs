@@ -24,7 +24,7 @@ log_onUpdated :: forall eff. Int -> Eff ( console :: CONSOLE | eff) Unit
 log_onUpdated tabId = log ("onUpdated " <> show tabId)
 
 log_onActivated :: forall eff. OnActivatedParameters -> Eff ( console :: CONSOLE | eff) Unit
-log_onActivated {tabId, windowId} = log ("onActivated tabId=" <> show tabId <> " windowId=" <> show windowId)
+log_onActivated {tabId} = log ("onActivated tabId=" <> show tabId)
 
 main = do
   _ <- subscribe onUpdated log_onUpdated
