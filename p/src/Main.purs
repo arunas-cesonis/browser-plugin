@@ -7,8 +7,13 @@ import Control.Monad.Eff.Console (CONSOLE, log, logShow)
 import FRP (FRP)
 import FRP.Event (Event, subscribe)
 
+newtype TabID = TabID Int
+
+instance showTabID :: Show TabID where
+  show (TabID id) = "TabID " <> show id
+
 type OnActivatedParameters =
-  { tabId :: Int
+  { tabId :: TabID
   , windowId :: Int
   }
 
