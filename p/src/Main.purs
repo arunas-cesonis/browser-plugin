@@ -1,6 +1,8 @@
 module Main where
 
 import Prelude
+import Data.Maybe (Maybe(..), maybe)
+import Data.String
 import Control.Monad.Aff
 import Control.Monad.Eff.Class
 import Control.Monad.Eff (Eff, kind Effect)
@@ -26,12 +28,18 @@ type OnActivatedParameters =
 type Tab =
   { active :: Boolean
   , windowId :: Int
+  , url :: Maybe String
   }
 
 foreign import onUpdated :: Event Int
 foreign import onActivated :: Event OnActivatedParameters
 
-foreign import getTabImpl :: TabID -> Promise Tab
+foreign import getTabImpl
+  :: (forall a. a -> Maybe a)
+  -> (forall a. Maybe a)
+  -> TabID -> Promise Tab
+
+getTab = getTabImpl Just Nothing
 
 log_onUpdated :: forall eff. Int -> Eff ( console :: CONSOLE | eff) Unit
 log_onUpdated tabId = log ("onUpdated " <> show tabId)
@@ -40,10 +48,12 @@ log_onActivated :: forall eff. OnActivatedParameters -> Eff ( console :: CONSOLE
 log_onActivated {tabId} = log ("onActivated tabId=" <> show tabId)
 
 go = launchAff do
-  x <- Promise.toAff (getTabImpl (TabID 1))
+  x <- Promise.toAff (getTab (TabID 1))
   liftEff $ logShow x.windowId
-  y <- Promise.toAff (getTabImpl (TabID 2))
+  y <- Promise.toAff (getTab (TabID 2))
   liftEff $ logShow y.windowId
+  liftEff $ logShow y.active
+  liftEff $ logShow (maybe "EMPTY" (drop 3) y.url)
 
 main = do
   _ <- subscribe onUpdated log_onUpdated

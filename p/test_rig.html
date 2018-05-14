@@ -24,7 +24,8 @@
             console.warn('browser.tabs.get', arguments)
             return Promise.resolve({
               active: true,
-              windowId: 123123
+              windowId: 123123,
+              url: 'http://taburl'
             })
           }
         }

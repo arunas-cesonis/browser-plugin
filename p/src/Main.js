@@ -22,6 +22,16 @@ exports.onUpdated = function (sub) {
   }
 };
 
-exports.getTabImpl = function (tabId) {
-  return browser.tabs.get(tabId)
+exports.getTabImpl = function (just) {
+  return function (nothing) {
+    return function (tabId) {
+      return browser.tabs.get(tabId).then(function (obj) {
+        return {
+          active: obj.active,
+          windowId: obj.windowId,
+          url: typeof obj.url === 'string' ? just(obj.url) : nothing
+        }
+      })
+    }
+  }
 }
