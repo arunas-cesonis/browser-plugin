@@ -4,7 +4,6 @@ exports.onActivated = function (sub) {
   var cb = function (obj) {
     sub({
       tabId: obj.tabId,
-      windowId: obj.windowId
     })
   }
   browser.tabs.onActivated.addListener(sub)

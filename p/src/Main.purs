@@ -12,9 +12,9 @@ newtype TabID = TabID Int
 instance showTabID :: Show TabID where
   show (TabID id) = "TabID " <> show id
 
+-- | The browser also supplies integer windowId
 type OnActivatedParameters =
   { tabId :: TabID
-  , windowId :: Int
   }
 
 foreign import onUpdated :: Event Int
