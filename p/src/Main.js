@@ -21,3 +21,7 @@ exports.onUpdated = function (sub) {
     browser.tabs.onUpdated.removeListener(cb)
   }
 };
+
+exports.getTabImpl = function (tabId) {
+  return browser.tabs.get(tabId)
+}

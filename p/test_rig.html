@@ -19,7 +19,14 @@
       var browser = {
         tabs: {
           onActivated: mkEmitter(),
-          onUpdated: mkEmitter()
+          onUpdated: mkEmitter(),
+          get: function (id) {
+            console.warn('browser.tabs.get', arguments)
+            return Promise.resolve({
+              active: true,
+              windowId: 123123
+            })
+          }
         }
       }
     </script>
