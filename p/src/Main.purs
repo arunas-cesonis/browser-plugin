@@ -25,6 +25,8 @@ type OnActivatedParameters =
   { tabId :: TabID
   }
 
+-- | XXX: Add title here
+-- | XXX: Remove unused properties
 type Tab =
   { active :: Boolean
   , windowId :: Int
@@ -47,6 +49,7 @@ log_onUpdated tabId = log ("onUpdated " <> show tabId)
 log_onActivated :: forall eff. OnActivatedParameters -> Eff ( console :: CONSOLE | eff) Unit
 log_onActivated {tabId} = log ("onActivated tabId=" <> show tabId)
 
+-- | XXX: Hook these up in log_ functions with calls to backend via affjax
 go = launchAff do
   x <- Promise.toAff (getTab (TabID 1))
   liftEff $ logShow x.windowId
