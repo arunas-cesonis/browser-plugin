@@ -1,7 +1,7 @@
 module Main where
 
 import Prelude
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe
 import Data.String
 import Control.Monad.Aff
 import Control.Monad.Eff.Class
@@ -9,28 +9,38 @@ import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.Console (CONSOLE, log, logShow)
 import Control.Promise as Promise
 import Control.Promise (Promise)
+import Data.Argonaut.Encode
+import Data.Argonaut
+import Network.HTTP.Affjax
+import Network.HTTP.Affjax.Request
+import Network.HTTP.Affjax.Response
 
 import FRP (FRP)
 import FRP.Event (subscribe)
 import Browser.Tabs as Tabs
 
-log_onUpdated :: forall eff. Int -> Eff ( console :: CONSOLE | eff) Unit
-log_onUpdated tabId = log ("onUpdated " <> show tabId)
+newtype Request = Request
+  { url :: String
+  }
 
-log_onActivated :: forall eff. Tabs.OnActivatedParameters -> Eff ( console :: CONSOLE | eff) Unit
-log_onActivated {tabId} = log ("onActivated tabId=" <> show tabId)
+instance encodeJsonRequest :: EncodeJson Request where
+  encodeJson (Request o) = "url" := o.url ~> jsonEmptyObject
 
--- | XXX: Hook these up in log_ functions with calls to backend via affjax
-go = launchAff do
-  x <- Promise.toAff (Tabs.get (Tabs.TabID 1))
-  liftEff $ logShow x.windowId
-  y <- Promise.toAff (Tabs.get (Tabs.TabID 2))
-  liftEff $ logShow y.windowId
-  liftEff $ logShow y.active
-  liftEff $ logShow (maybe "EMPTY" (drop 3) y.url)
+notify :: Request -> forall b. Aff (ajax :: AJAX | b) Unit
+notify req = do
+  y <- post "http://localhost:8080" (encodeJson req)
+  pure y.response
+
+notifyTabId id = launchAff do
+  tab <- Promise.toAff $ Tabs.get id
+  url <- pure $ fromMaybe "" tab.url
+  notify (Request {url})
+  liftEff $ log $ "notified " <> url
+
+log_onUpdated tabId = notifyTabId tabId
+log_onActivated {tabId} = notifyTabId tabId
 
 main = do
   _ <- subscribe Tabs.onUpdated log_onUpdated
   _ <- subscribe Tabs.onActivated log_onActivated
-  _ <- go
   pure unit
