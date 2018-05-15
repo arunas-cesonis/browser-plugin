@@ -31,7 +31,7 @@ type Tab =
   , url :: Maybe String
   }
 
-foreign import onUpdated :: Event Int
+foreign import onUpdated :: Event TabID
 foreign import onActivated :: Event OnActivatedParameters
 
 foreign import getImpl
