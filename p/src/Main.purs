@@ -1,21 +1,15 @@
 module Main where
 
-import Prelude
-import Data.Maybe
-import Data.String
-import Control.Monad.Aff
-import Control.Monad.Eff.Class
-import Control.Monad.Eff (Eff, kind Effect)
-import Control.Monad.Eff.Console (CONSOLE, log, logShow)
+import Prelude (Unit, bind, discard, pure, unit, ($), (<>))
+import Data.Maybe (fromMaybe)
+import Control.Monad.Aff (Aff, launchAff)
+import Control.Monad.Eff.Class (liftEff)
+import Control.Monad.Eff.Console (log)
 import Control.Promise as Promise
-import Control.Promise (Promise)
-import Data.Argonaut.Encode
-import Data.Argonaut
-import Network.HTTP.Affjax
-import Network.HTTP.Affjax.Request
-import Network.HTTP.Affjax.Response
+import Data.Argonaut.Encode (class EncodeJson, encodeJson, (:=), (~>))
+import Data.Argonaut (jsonEmptyObject)
+import Network.HTTP.Affjax (AJAX, post)
 
-import FRP (FRP)
 import FRP.Event (subscribe)
 import Browser.Tabs as Tabs
 
