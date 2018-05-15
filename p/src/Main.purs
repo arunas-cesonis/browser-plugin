@@ -11,55 +11,26 @@ import Control.Promise as Promise
 import Control.Promise (Promise)
 
 import FRP (FRP)
-import FRP.Event (Event, subscribe)
-
--- | Possibly this should be a data that includes a magical value TAB_ID_NONE
--- | See https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/tabs/TAB_ID_NONE
-newtype TabID = TabID Int
-
-instance showTabID :: Show TabID where
-  show (TabID id) = "TabID " <> show id
-
--- | The browser also supplies integer windowId
-type OnActivatedParameters =
-  { tabId :: TabID
-  }
-
--- | XXX: Add title here
--- | XXX: Remove unused properties
-type Tab =
-  { active :: Boolean
-  , windowId :: Int
-  , url :: Maybe String
-  }
-
-foreign import onUpdated :: Event Int
-foreign import onActivated :: Event OnActivatedParameters
-
-foreign import getTabImpl
-  :: (forall a. a -> Maybe a)
-  -> (forall a. Maybe a)
-  -> TabID -> Promise Tab
-
-getTab = getTabImpl Just Nothing
+import FRP.Event (subscribe)
+import Browser.Tabs as Tabs
 
 log_onUpdated :: forall eff. Int -> Eff ( console :: CONSOLE | eff) Unit
 log_onUpdated tabId = log ("onUpdated " <> show tabId)
 
-log_onActivated :: forall eff. OnActivatedParameters -> Eff ( console :: CONSOLE | eff) Unit
+log_onActivated :: forall eff. Tabs.OnActivatedParameters -> Eff ( console :: CONSOLE | eff) Unit
 log_onActivated {tabId} = log ("onActivated tabId=" <> show tabId)
 
 -- | XXX: Hook these up in log_ functions with calls to backend via affjax
 go = launchAff do
-  x <- Promise.toAff (getTab (TabID 1))
+  x <- Promise.toAff (Tabs.get (Tabs.TabID 1))
   liftEff $ logShow x.windowId
-  y <- Promise.toAff (getTab (TabID 2))
+  y <- Promise.toAff (Tabs.get (Tabs.TabID 2))
   liftEff $ logShow y.windowId
   liftEff $ logShow y.active
   liftEff $ logShow (maybe "EMPTY" (drop 3) y.url)
 
 main = do
-  _ <- subscribe onUpdated log_onUpdated
-  _ <- subscribe onActivated log_onActivated
+  _ <- subscribe Tabs.onUpdated log_onUpdated
+  _ <- subscribe Tabs.onActivated log_onActivated
   _ <- go
   pure unit

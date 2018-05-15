@@ -22,7 +22,7 @@ exports.onUpdated = function (sub) {
   }
 };
 
-exports.getTabImpl = function (just) {
+exports.getImpl = function (just) {
   return function (nothing) {
     return function (tabId) {
       return browser.tabs.get(tabId).then(function (obj) {
