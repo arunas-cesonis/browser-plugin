@@ -1,7 +1,10 @@
 module Main where
 
-import Prelude (Unit, bind, discard, pure, unit, ($), (<>))
+import Prelude (Unit, bind, discard, pure, unit, ($), (<>), (>>=), (-), (<$>))
 import Data.Maybe (fromMaybe)
+import Data.DateTime.Instant (Instant, unInstant)
+import Data.Time.Duration
+import Control.Monad.Eff.Now (now)
 import Control.Monad.Aff (Aff, launchAff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log)
@@ -9,6 +12,7 @@ import Control.Promise as Promise
 import Data.Argonaut.Encode (class EncodeJson, encodeJson, (:=), (~>))
 import Data.Argonaut (jsonEmptyObject)
 import Network.HTTP.Affjax (AJAX, post)
+import Debug.Trace
 
 import FRP.Event (subscribe)
 import Browser.Tabs as Tabs
@@ -16,10 +20,18 @@ import Browser.Tabs as Tabs
 newtype Request = Request
   { url :: String
   , title :: String
+  , time :: Number
   }
 
+unMilliseconds (Milliseconds x) = x
+
+getTime = unMilliseconds <$> unInstant <$> now
+
 instance encodeJsonRequest :: EncodeJson Request where
-  encodeJson (Request o) = "url" := o.url ~> jsonEmptyObject
+  encodeJson (Request o) =
+    "title" := o.title ~>
+    ("time" := o.time ~>
+    ("url" := o.url ~> jsonEmptyObject))
 
 url :: String
 url = "http://localhost:8080"
@@ -29,17 +41,19 @@ notify req = do
   y <- post url (encodeJson req)
   pure y.response
 
-notifyTabId id = launchAff do
+notifyTabId startTime id = launchAff do
   tab <- Promise.toAff $ Tabs.get id
+  time <- liftEff $ (getTime >>= \currentTime-> pure $ currentTime - startTime)
   url <- pure $ fromMaybe "" tab.url
   title <- pure $ fromMaybe "" tab.title
-  notify (Request {url, title})
+  notify (Request {url, title, time})
   liftEff $ log $ "notified " <> url
 
-log_onUpdated tabId = notifyTabId tabId
-log_onActivated {tabId} = notifyTabId tabId
+log_onUpdated startTime tabId = notifyTabId startTime tabId
+log_onActivated startTime {tabId} = notifyTabId startTime tabId
 
 main = do
-  _ <- subscribe Tabs.onUpdated log_onUpdated
-  _ <- subscribe Tabs.onActivated log_onActivated
+  startTime <- getTime
+  _ <- subscribe Tabs.onUpdated (log_onUpdated startTime)
+  _ <- subscribe Tabs.onActivated (log_onActivated startTime)
   pure unit
