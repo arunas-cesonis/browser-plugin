@@ -15,20 +15,25 @@ import Browser.Tabs as Tabs
 
 newtype Request = Request
   { url :: String
+  , title :: String
   }
 
 instance encodeJsonRequest :: EncodeJson Request where
   encodeJson (Request o) = "url" := o.url ~> jsonEmptyObject
 
+url :: String
+url = "http://localhost:8080"
+
 notify :: Request -> forall b. Aff (ajax :: AJAX | b) Unit
 notify req = do
-  y <- post "http://localhost:8080" (encodeJson req)
+  y <- post url (encodeJson req)
   pure y.response
 
 notifyTabId id = launchAff do
   tab <- Promise.toAff $ Tabs.get id
   url <- pure $ fromMaybe "" tab.url
-  notify (Request {url})
+  title <- pure $ fromMaybe "" tab.title
+  notify (Request {url, title})
   liftEff $ log $ "notified " <> url
 
 log_onUpdated tabId = notifyTabId tabId

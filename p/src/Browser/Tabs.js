@@ -29,7 +29,8 @@ exports.getImpl = function (just) {
         return {
           active: obj.active,
           windowId: obj.windowId,
-          url: typeof obj.url === 'string' ? just(obj.url) : nothing
+          url: typeof obj.url === 'string' ? just(obj.url) : nothing,
+          title: typeof obj.title === 'string' ? just(obj.title) : nothing
         }
       })
     }

@@ -29,6 +29,7 @@ type Tab =
   { active :: Boolean
   , windowId :: Int
   , url :: Maybe String
+  , title :: Maybe String
   }
 
 foreign import onUpdated :: Event TabID
