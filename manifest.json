@@ -7,10 +7,4 @@
   "background": {
     "scripts": ["p/dist/out.js"]
   },
-  "content_scripts": [
-    {
-      "matches": ["*://*.mozilla.org/*"],
-      "js": ["borderify.js"]
-    }
-  ]
 }
