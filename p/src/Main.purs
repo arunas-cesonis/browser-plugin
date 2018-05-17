@@ -22,7 +22,7 @@ newtype Request = Request
   { url :: String
   , title :: String
   , time :: Number
-  , uuid :: String
+  , uuid :: UUID
   }
 
 unMilliseconds (Milliseconds x) = x
@@ -33,7 +33,8 @@ instance encodeJsonRequest :: EncodeJson Request where
   encodeJson (Request o) =
     "title" := o.title ~>
     ("time" := o.time ~>
-    ("url" := o.url ~> jsonEmptyObject))
+    ("uuid" := show o.uuid ~>
+    ("url" := o.url ~> jsonEmptyObject)))
 
 url :: String
 url = "http://localhost:8080"
@@ -48,7 +49,7 @@ notifyTabId startTime id = launchAff do
   time <- liftEff $ (getTime >>= \currentTime-> pure $ currentTime - startTime)
   url <- pure $ fromMaybe "" tab.url
   title <- pure $ fromMaybe "" tab.title
-  uuid <- liftEff $ (show <$> genUUID)
+  uuid <- liftEff $ genUUID
   notify (spy (Request {url, title, time, uuid}))
 
 log_onUpdated startTime tabId = notifyTabId startTime tabId
