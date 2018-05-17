@@ -21,18 +21,18 @@ import Browser.Tabs as Tabs
 newtype Request = Request
   { url :: String
   , title :: String
-  , time :: Number
+  , time :: Milliseconds
   , uuid :: UUID
   }
 
 unMilliseconds (Milliseconds x) = x
 
-getTime = unMilliseconds <$> unInstant <$> now
+getTime = unInstant <$> now
 
 instance encodeJsonRequest :: EncodeJson Request where
   encodeJson (Request o) =
     "title" := o.title ~>
-    ("time" := o.time ~>
+    ("time" := unMilliseconds o.time ~>
     ("uuid" := show o.uuid ~>
     ("url" := o.url ~> jsonEmptyObject)))
 
