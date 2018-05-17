@@ -1,9 +1,10 @@
 module Main where
 
-import Prelude (Unit, bind, discard, pure, unit, ($), (<>), (>>=), (-), (<$>))
+import Prelude (Unit, bind, discard, pure, unit, ($), (<>), (>>=), (-), (<$>), show)
 import Data.Maybe (fromMaybe)
 import Data.DateTime.Instant (Instant, unInstant)
 import Data.Time.Duration
+import Data.UUID
 import Control.Monad.Eff.Now (now)
 import Control.Monad.Aff (Aff, launchAff)
 import Control.Monad.Eff.Class (liftEff)
@@ -21,6 +22,7 @@ newtype Request = Request
   { url :: String
   , title :: String
   , time :: Number
+  , uuid :: String
   }
 
 unMilliseconds (Milliseconds x) = x
@@ -46,8 +48,8 @@ notifyTabId startTime id = launchAff do
   time <- liftEff $ (getTime >>= \currentTime-> pure $ currentTime - startTime)
   url <- pure $ fromMaybe "" tab.url
   title <- pure $ fromMaybe "" tab.title
-  notify (Request {url, title, time})
-  liftEff $ log $ "notified " <> url
+  uuid <- liftEff $ (show <$> genUUID)
+  notify (spy (Request {url, title, time, uuid}))
 
 log_onUpdated startTime tabId = notifyTabId startTime tabId
 log_onActivated startTime {tabId} = notifyTabId startTime tabId
