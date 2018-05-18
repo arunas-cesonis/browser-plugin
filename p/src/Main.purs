@@ -1,20 +1,19 @@
 module Main where
 
-import Prelude (Unit, bind, discard, pure, unit, ($), (<>), (>>=), (-), (<$>), show)
+import Prelude (Unit, bind, pure, unit, ($), (>>=), (-), (<$>), show)
 import Data.Maybe (fromMaybe)
-import Data.DateTime.Instant (Instant, unInstant)
-import Data.Time.Duration
-import Data.UUID
-import Control.Monad.Eff.Now (now)
-import Control.Monad.Aff (Aff, launchAff)
+import Data.DateTime.Instant (unInstant)
+import Data.Time.Duration (Milliseconds(..))
+import Data.UUID (UUID, genUUID, GENUUID)
+import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Now (NOW, now)
+import Control.Monad.Aff (Aff, launchAff, Fiber)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (log)
 import Control.Promise as Promise
 import Data.Argonaut.Encode (class EncodeJson, encodeJson, (:=), (~>))
 import Data.Argonaut (jsonEmptyObject)
 import Network.HTTP.Affjax (AJAX, post)
-import Debug.Trace
-
+import FRP (FRP)
 import FRP.Event (subscribe)
 import Browser.Tabs as Tabs
 
@@ -25,8 +24,10 @@ newtype Request = Request
   , uuid :: UUID
   }
 
+unMilliseconds :: Milliseconds -> Number
 unMilliseconds (Milliseconds x) = x
 
+getTime :: forall eff. Eff (now :: NOW | eff) Milliseconds
 getTime = unInstant <$> now
 
 instance encodeJsonRequest :: EncodeJson Request where
@@ -36,25 +37,46 @@ instance encodeJsonRequest :: EncodeJson Request where
     ("uuid" := show o.uuid ~>
     ("url" := o.url ~> jsonEmptyObject)))
 
-url :: String
-url = "http://localhost:8080"
+backend :: String
+backend = "http://localhost:8080"
 
 notify :: Request -> forall b. Aff (ajax :: AJAX | b) Unit
 notify req = do
-  y <- post url (encodeJson req)
+  y <- post backend (encodeJson req)
   pure y.response
 
+type NotifyEff eff = (ajax :: AJAX, now :: NOW, uuid :: GENUUID | eff)
+
+notifyTabId
+  :: forall eff
+  . Milliseconds
+  -> Tabs.TabID
+  -> Eff (NotifyEff eff) (Fiber (NotifyEff eff) Unit)
 notifyTabId startTime id = launchAff do
   tab <- Promise.toAff $ Tabs.get id
   time <- liftEff $ (getTime >>= \currentTime-> pure $ currentTime - startTime)
   url <- pure $ fromMaybe "" tab.url
   title <- pure $ fromMaybe "" tab.title
   uuid <- liftEff $ genUUID
-  notify (spy (Request {url, title, time, uuid}))
+  notify (Request {url, title, time, uuid})
 
+log_onUpdated
+  :: forall eff
+  . Milliseconds
+  -> Tabs.TabID
+  -> Eff (NotifyEff eff) (Fiber (NotifyEff eff) Unit)
 log_onUpdated startTime tabId = notifyTabId startTime tabId
+
+log_onActivated
+  :: forall eff
+  . Milliseconds
+  -> Tabs.OnActivatedParameters
+  -> Eff (NotifyEff eff) (Fiber (NotifyEff eff) Unit)
 log_onActivated startTime {tabId} = notifyTabId startTime tabId
 
+main
+  :: forall eff
+  .  Eff (NotifyEff (frp :: FRP | eff)) Unit
 main = do
   startTime <- getTime
   _ <- subscribe Tabs.onUpdated (log_onUpdated startTime)
