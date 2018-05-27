@@ -49,36 +49,39 @@ type NotifyEff eff = (ajax :: AJAX, now :: NOW, uuid :: GENUUID | eff)
 
 notifyTabId
   :: forall eff
-  . Milliseconds
+  . UUID 
+  -> Milliseconds
   -> Tabs.TabID
   -> Eff (NotifyEff eff) (Fiber (NotifyEff eff) Unit)
-notifyTabId startTime id = launchAff do
+notifyTabId uuid startTime id = launchAff do
   tab <- Promise.toAff $ Tabs.get id
   time <- liftEff $ (getTime >>= \currentTime-> pure $ currentTime - startTime)
   url <- pure $ fromMaybe "" tab.url
   title <- pure $ fromMaybe "" tab.title
-  uuid <- liftEff $ genUUID
   notify (Request {url, title, time, uuid})
 
 log_onUpdated
   :: forall eff
-  . Milliseconds
+  . UUID 
+  -> Milliseconds
   -> Tabs.TabID
   -> Eff (NotifyEff eff) (Fiber (NotifyEff eff) Unit)
-log_onUpdated startTime tabId = notifyTabId startTime tabId
+log_onUpdated uuid startTime tabId = notifyTabId uuid startTime tabId
 
 log_onActivated
   :: forall eff
-  . Milliseconds
+  . UUID 
+  -> Milliseconds
   -> Tabs.OnActivatedParameters
   -> Eff (NotifyEff eff) (Fiber (NotifyEff eff) Unit)
-log_onActivated startTime {tabId} = notifyTabId startTime tabId
+log_onActivated uuid startTime {tabId} = notifyTabId uuid startTime tabId
 
 main
   :: forall eff
   .  Eff (NotifyEff (frp :: FRP | eff)) Unit
 main = do
   startTime <- getTime
-  _ <- subscribe Tabs.onUpdated (log_onUpdated startTime)
-  _ <- subscribe Tabs.onActivated (log_onActivated startTime)
+  uuid <- genUUID
+  _ <- subscribe Tabs.onUpdated (log_onUpdated uuid startTime)
+  _ <- subscribe Tabs.onActivated (log_onActivated uuid startTime)
   pure unit

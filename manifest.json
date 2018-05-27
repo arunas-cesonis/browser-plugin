@@ -6,5 +6,5 @@
   "permissions": ["tabs"],
   "background": {
     "scripts": ["p/dist/out.js"]
-  },
+  }
 }
